@@ -83,9 +83,14 @@ setFragmentResultListener(REQUEST_KEY) { _, bundle ->
 setFragmentResult(REQUEST_KEY, bundleOf(KEY_PICKED to value))
 ```
 
-结果由 `FragmentManager` 暂存，接收方进入 `STARTED` 时投递，所以后台期间发的结果不会丢，也不会在错误的时机触达界面。同一个 key 只保留最新一条。
+投递规则（`fragment` 1.3.0 起，`FragmentManager` 实现 `FragmentResultOwner`）：
 
-父子 Fragment 之间要用 `childFragmentManager` 对应的层级，跨层级发结果收不到——这是最常见的"结果收不到"原因。
+- 结果存在 `FragmentManager` 里，**接收方到达 `STARTED` 才投递**；设置结果时接收方已是 `STARTED` 则立即回调
+- **一个 key 只有一个监听器和一个结果**。监听器还没到 `STARTED` 时重复 `setFragmentResult()`，待投递的结果会被最新的替换
+- 监听器收到之后结果**被清除**，不会重复投递
+- 返回栈上的 Fragment 要等被弹出并到达 `STARTED` 才收到结果
+
+**监听和设置必须在同一个 `FragmentManager` 上**——这是"结果收不到"最常见的原因。父子 Fragment 用的是不同的 manager（父层是 `parentFragmentManager`，子层是 `childFragmentManager`），跨层级发收不到。
 
 ### 共享 ViewModel 的作用域
 
