@@ -98,6 +98,17 @@ head -3 ~/.agents/skills/<skill-name>/SKILL.md
 - **常驻规则**——`~/.cursor/rules/android-view.mdc` 末尾按域分流到各 wiki
 - **审查流程**——`review_skill` 的「判定依据」一节把各类疑问指向对应 wiki，配合 `post-change-gpt-review.mdc` 生效
 
+## 什么时候该回来复查
+
+版本敏感内容会过期，标了「核实于」的地方尤其。这几个时机先更新 wiki 再动手，顺序反了就等于拿过期结论改代码：
+
+- 升 AGP / Gradle → 先更 `android-gradle-wiki` 的兼容矩阵和破坏性变更清单
+- 升 compileSdk / targetSdk → 先更 `android-sdk-behavior-wiki` 的升级清单和 Play 要求
+- 官方废弃某个 API → 在对应 reference 里单列「写了也没用」，不要直接删掉旧写法，否则下次看到老代码判断不出它为什么错
+- **实战中 agent 判断错了 → 把这个失败模式记进对应 wiki**，这比预先扩充新知识域有用得多
+
+最后一条是这个仓库长期价值的来源：新域按需再建，已建的域靠真实失败反哺。
+
 ## 说明
 
 - `.DS_Store` 之类系统文件不要带进 skill 目录，已在 `.gitignore` 里挡掉
