@@ -10,7 +10,7 @@
 
 - 收：版本敏感（API 废弃、行为随版本变）、反直觉、新旧写法并存有历史包袱的语言与 SDK 领域
 - 不收：agent 凭训练数据就掌握的内容——Java 基础语法、通用设计模式、SOLID 之类，建了也只是白占上下文
-- 不收：任务/工具型 skill（跑诊断、查日志、走审批流程），除非它是维护本仓 wiki 的配套工具
+- 不收：任务/工具型 skill（跑诊断、查日志、走审批流程），除非它是本仓 wiki 或 `cursor_rules/` 的配套件——即由规则点名调用、把细节从常驻上下文里挪出来的那种（体检、审查、开工计划）
 - 不收：第三方分发的 skill（如 `lark-*`、`mx-*`、`pdf`、`playwright`、`openclaw`），它们随上游升级覆盖，纳入自管只会分叉
 - 不收：与编码无关的个人领域 skill（投资、阅读、生活流程）
 
@@ -21,18 +21,42 @@
 | 目录 | skill 名 | 规模 | 覆盖域 |
 |---|---|---|---|
 | `kotlin_wiki/` | `kotlin-wiki` | 49 行 + 4 篇 | Kotlin 语言：惯用写法、协程/Flow、类型与 API 设计、常见陷阱 |
-| `android_view_wiki/` | `android-view-wiki` | 76 行 + 9 篇 | Android View 层：测量布局、动画、约束、列表、触摸、渲染管线、insets、自定义 View |
+| `android_view_wiki/` | `android-view-wiki` | 87 行 + 9 篇 + 1 脚本 | Android View 层：测量布局、动画、约束、列表、触摸、渲染管线、insets、自定义 View；`scripts/layout-chain.py` 出约束拓扑 |
 | `android_architecture_wiki/` | `android-architecture-wiki` | 64 行 + 6 篇 | Android 应用架构：UDF 与 UiState、ViewModel 边界与状态收集、一次性事件、数据层与 SSOT、用例判断、分层与 DI |
 | `android_sdk_behavior_wiki/` | `android-sdk-behavior-wiki` | 64 行 + 6 篇 | targetSdk 升级与版本行为变更（API 33-37）：升级清单、权限收紧、前台服务与后台限制、intent 与组件导出、存储媒体、界面兼容 |
 | `android_component_wiki/` | `android-component-wiki` | 51 行 + 5 篇 | Activity / Fragment 组件：生命周期与状态保存、Fragment 与 View 双生命周期、事务提交语义、结果回传与通信、启动模式与任务栈 |
 | `android_gradle_wiki/` | `android-gradle-wiki` | 54 行 + 5 篇 | Gradle 构建：版本兼容与 AGP 8/9 破坏性变更、version catalog 与依赖仲裁、构建变体与签名、R8 与 keep 规则、构建性能 |
+| `agent_skills_wiki/` | `agent-skills-wiki` | 59 行 + 6 篇 | Agent Skills 规范（[agentskills.io](https://agentskills.io)）：字段约束与体积预算、description 触发机制与触发率实测、正文密度与规定程度校准、结构模式、脚本接口、eval 方法 |
+| `plantuml_wiki/` | `plantuml-wiki` | 67 行 + 3 篇 + 1 脚本 | PlantUML 语法与本地渲染：图类型选择判据、类图关系符号与成员分区、creole 与三色 diff 记法、类与线样式、布局干预手段、一批只有渲染过才知道的静默失败；`scripts/puml-render.sh` 本地出 PNG |
 
 配套工具（任务型，作为例外留在本仓）：
 
 | 目录 | skill 名 | 规模 | 用途 |
 |---|---|---|---|
-| `optimize_skill/` | `optimize-skill` | 118 行 | 给 skill 做体检并修复，本仓 wiki 的维护工具（`disable-model-invocation`，只显式调用） |
+| `optimize_skill/` | `optimize-skill` | 128 行 | 给 skill 做体检并修复，本仓 wiki 的维护工具（`disable-model-invocation`，只显式调用）；判定依据路由到 `agent-skills-wiki` |
 | `review_skill/` | `android-change-review` | 98 行 | 审查 Android 改动，输出 P0/P1/P2；判定依据路由到本仓各 wiki |
+| `design_review_skill/` | `design-review` | 59 行 | 换一个模型审设计质量（冗余、过度设计、归属选择），默认不开 |
+| `plan_skill/` | `change-plan` | 110 行 | 开工前的计划形态：四栏模板、质询三问、终止判据、改完对账，以及四样审批图各自的判据（状态组合矩阵 / 约束拓扑 / 改动类图 / 决策表）；由 `post-change-gpt-review` 的 B 档（定要不要出图）和 C 档点名 |
+
+## 非 skill 目录
+
+这两个目录没有 `SKILL.md`，不参与 agent 发现，别按 skill 的规矩去改：
+
+| 目录 | 放什么 | 谁读 |
+|---|---|---|
+| `cursor_rules/` | 常驻规则实体（`*.mdc`），`~/.cursor/rules/` 下是指向这里的软链 | agent，每次会话常驻 |
+| `retros/` | AI 协作失败案例集，见该目录 `README.md` | 人 |
+
+`cursor_rules/` 的软链方式与 skills 一致，但目标目录是 `~/.cursor/rules/`：
+
+```bash
+cd ~/work_space/skills/cursor_rules
+for f in *.mdc; do rm -f ~/.cursor/rules/$f && ln -s "$PWD/$f" ~/.cursor/rules/$f; done
+```
+
+规则文件曾经在两处各存一份并分叉过一次（改了外部那份，仓库这份没跟上）。**只留软链，不要拷副本。**
+
+`retros/` 的作用是给「同一类问题第二次出现」提供证据——`post-change-gpt-review.mdc` 卡了"第二次才写规则"的触发线，而凭记忆判断是不是第二次必然失败。改规则前先去那里翻同类案例。
 
 ## 安装约定
 
@@ -63,10 +87,14 @@ head -3 ~/.agents/skills/<skill-name>/SKILL.md
 ```
 <wiki 目录>/
 ├── SKILL.md              # 路由表 + 不读 reference 就该遵守的硬规则
-└── references/
-    ├── <主题>.md          # 每篇结尾带「症状 → 排查」表
-    └── ...
+├── references/
+│   ├── <主题>.md          # 每篇结尾带「症状 → 排查」表
+│   └── ...
+└── scripts/              # 可选，只在「靠目测必然出错」时才加
+    └── <工具>.py
 ```
+
+`scripts/` 的收录判据比 reference 严：**这件事人（和 agent）目测会稳定看错，而它是机械可算的。** 目前只有 `android_view_wiki/scripts/layout-chain.py`——约束拓扑跨文件、锚点反向依赖要全文搜，目测漏一个就是一次返工。脚本只读不写、零第三方依赖、`--help` 说清接口。
 
 硬约束：
 
@@ -95,8 +123,10 @@ head -3 ~/.agents/skills/<skill-name>/SKILL.md
 知识库建好了不等于会被用到，入口必须接线。目前有三条路径，改动 wiki 名字时三处都要同步：
 
 - **自动路由**——靠各 `SKILL.md` 的 `description`，是主路径
-- **常驻规则**——`~/.cursor/rules/android-view.mdc` 末尾按域分流到各 wiki
+- **常驻规则**——`cursor_rules/android-view.mdc`（软链到 `~/.cursor/rules/`）末尾按域分流到各 wiki
 - **审查流程**——`review_skill` 的「判定依据」一节把各类疑问指向对应 wiki，配合 `post-change-gpt-review.mdc` 生效
+- **体检流程**——`optimize_skill` 开头把 skill 写法的判定依据指向 `agent-skills-wiki`，自身只留流程
+- **开工流程**——`post-change-gpt-review.mdc` 的 C 档和决策表末尾指向 `change-plan`，规则只留硬要求，模板在 skill 里
 
 ## 什么时候该回来复查
 

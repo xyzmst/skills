@@ -17,7 +17,19 @@ description: Android View 层知识库，覆盖测量布局时序、多态切换
 
 如果第 2 问答案是"要等布局回调"，**先换方案，不要想办法把尺寸抠出来**。手动 `measure()`、`doOnLayout`、`post{}`、自己缓存高度，这些都是在跟框架的测量流程对抗，是复杂度和 bug 的主要来源。
 
-判断信号：**同一个显示问题修了两次还不对，就不要修第三次，回退方案。**需要写长注释解释"为什么这里不能用 `isLaidOut`"的实现，说明地基有问题。
+判断信号：**在调间距而不是改约束，就该回退方案，不要再调第三次。**"每次都好了一些"不是方案正确的证据——靠 dp 逼近出来的位置，对方内容一变就又错。需要写长注释解释"为什么这里不能用 `isLaidOut`"的实现，同样说明地基有问题。
+
+## 改布局 XML 之前：先跑脚本，不要通读 XML
+
+```bash
+python3 ~/.agents/skills/android-view-wiki/scripts/layout-chain.py <布局文件> [--id <view_id>]
+```
+
+输出四段：容器树（**跨没跨 `ConstraintLayout` 只能在这里看出来**）、纵向横向锚点、反向依赖、静态告警（宿主非 `ConstraintLayout` 却带 `layout_constraint*`、直接约束到 parent 且 margin ≥40dp）。
+
+**改任何 View 的 `visibility` 之前看「反向依赖」那段**：有人拿它当锚点就只能 `INVISIBLE`。**新增贴边元素之前看「容器树」**：目标位置的相邻元素不在同一个 `ConstraintLayout` 里，就挂不上约束，位置只能写死 dp——那是方案错了，不是调不准。
+
+渲染图在这里没用：跨容器的两个 View 和同容器挂链的两个 View 渲染出来长得一样，差别只在拓扑。
 
 ## 路由
 

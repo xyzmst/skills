@@ -85,10 +85,20 @@ XML 顺序、`elevation`、`bringToFront()` 三者混用会互相干扰，选一
 - `clipToPadding="false"`：内容可以画进 padding 区域，常用于 RecyclerView 首尾留白且能滚进去
 - 要生效通常需要**从目标 View 一路到根容器**都设 `false`
 
+## 约束是容器内的资源
+
+`layout_constraint*` 只在**直接父容器是 `ConstraintLayout`** 时有效：写在 `FrameLayout` 子 View 上不生效（常见于从 ConstraintLayout 搬迁后残留），跨两个不同布局文件的 View 之间也无法互相约束。
+
+所以「新 View 放哪个布局」先于「它的位置怎么写」：要和它争同一块占位空间的元素在哪个容器，它就得进那个容器。放到公共层图省事，位置就只能写死 dp 去猜——而对方高度通常是内容驱动的（文案折行、多态切换），固定 dp 永远对不齐。
+
+同一个 View 有两个独立的层级问题，只答一个不算答完：**谁盖谁**（z 序，跨容器也能靠 XML 顺序 / `elevation` 解决）和**谁挤谁**（占位，只能靠同容器内的约束链解决）。
+
 ## 症状 → 排查
 
 | 症状 | 优先查 |
 |---|---|
+| 新 View 与既有元素重叠，调 margin 怎么调都对不齐 | 两者是否在同一个 `ConstraintLayout` 内；不在就挂不上约束，先改归属再谈位置 |
+| 写了 `layout_constraint*` 完全没反应 | 直接父容器是不是 `ConstraintLayout`（`FrameLayout` 里的这些属性是死代码） |
 | 改了一个元素的 margin，别的也跟着动 | 约束链依赖，把它拆成独立约束 |
 | 隐藏某个 View 后其他元素跳动 | 该 View 是链锚点，`GONE` 改成 `INVISIBLE` |
 | 位置和预期差一截，且随内容长度变化 | 位置依赖了兄弟 View 的高度，改成独立的固定 margin |

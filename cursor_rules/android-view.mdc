@@ -1,0 +1,65 @@
+---
+description: 写或改 Android View 层代码（自定义 View、视图切换、动画、布局位置、列表、触摸）时的硬规则
+globs: "**/*.{kt,xml}"
+alwaysApply: false
+---
+
+# Android View 层
+
+判断标准：**这段代码有没有在"猜"或"抢"某个尺寸？** 有的话大概率方案就选错了。
+
+## 动手前的方案检查（最高优先级）
+
+写任何视图切换、动画、自定义布局之前，先回答：
+
+1. 这个方案需要哪些运行时尺寸？
+2. 这些尺寸在我要用的那一刻拿得到吗？（`GONE` 的是 0；刚 `VISIBLE`/刚 `setText` 的是 0 或旧值；`onViewCreated` 里全是 0）
+3. 拿不到的话，有没有不需要尺寸的等价方案？
+
+第 2 问答案是"要等布局回调"就**先换方案**，不要想办法把尺寸抠出来。手动 `measure()`、`doOnLayout`、`post{}`、自己缓存高度，都是在跟框架的测量流程对抗。
+
+不要把"视觉上看起来像某种效果"直接等同于"必须用某种实现"。滚动换页的观感不代表必须做位移换页。
+
+## 硬规则
+
+- **多态切换用可见性互斥（`VISIBLE`/`GONE`）+ `wrap_content`**，让框架自己算高度；不要拼成一列平移换页再手动锁高
+- 需要基于尺寸做位移动画时，改用**固定 dp 偏移 + alpha**，不依赖内容尺寸
+- 作为约束链锚点、或后面还有元素依赖它的 View，隐藏用 `INVISIBLE` 不用 `GONE`，否则整条链塌；在 Kotlin 代码里把 View 置 `GONE` 或动态改约束前，先用 `layout-chain.py` 或 `rg` 反查确认它不是下游锚点
+- 改 `ConstraintLayout` 的 margin 前先理清约束链（谁挂谁）；只想动一个就先让它独立约束到父容器
+- 动画在 `onDetachedFromWindow` 必须 `cancel()`；`repeatCount = INFINITE` 的不 cancel 会泄漏
+- `cancel()` 之后 `onAnimationEnd` **照样会回调**，用 `canceled` 标志位挡住，否则取消动画反而推进状态
+- 动画取消要显式复位改过的属性（`alpha`/`translation`/`scale`），复位收敛到一个方法里
+- 同一属性同时只允许一个动画在跑；多属性用 `PropertyValuesHolder` 合并
+- `postDelayed` 的 Runnable 要在 `onDetachedFromWindow`/`hide` 里 `removeCallbacks`
+- 高频路径（倒计时、进度）改布局属性前先判值有没有变，别每次都 `requestLayout`
+- 已在 XML 最后声明的 View 不要再 `bringToFront()`（触发父容器重排）；XML 顺序/`elevation`/`bringToFront` 选一种，别混用
+- `onBindViewHolder` 每个条件分支都要有 else，复用会带上一条的残留状态
+- 自定义 View 的 `onDraw` 里禁止创建对象（`Paint`/`Rect`/`Path` 提到成员）
+
+## 返工信号
+
+- **在调间距而不是改约束**，就该回退方案，不要再调第三次——"每次都好了一些"不是方案正确的证据
+- 需要写长注释解释"为什么这里不能用 `isLaidOut`"之类的实现，说明地基有问题
+- 用户连续说"还是不对 / 一闪而过 / 别搞这么复杂"，是在说方案不对，不是实现有 bug
+
+## 边界
+
+改旧文件跟周围风格，不顺手重写整段。与既有架构冲突时先问。
+
+以上是硬规则。具体怎么写、排查显示/位置/动画/列表/触摸/性能问题时，读 `android-view-wiki` skill 对应的 reference，不要凭记忆猜。
+
+其他域同理，按需读一篇：状态建模与分层归属看 `android-architecture-wiki`，Activity/Fragment 时序与结果回传看 `android-component-wiki`，targetSdk 行为差异看 `android-sdk-behavior-wiki`，构建与混淆看 `android-gradle-wiki`，Kotlin 写法看 `kotlin-wiki`。
+
+```kotlin
+// ❌ 依赖尺寸：需要提前量高、锁高，时序稍错就压扁
+val h = measurePageHeight(pageA)
+layoutParams.height = h
+ObjectAnimator.ofFloat(container, View.TRANSLATION_Y, 0f, -h.toFloat()).start()
+
+// ✅ 不依赖尺寸：互斥可见性，容器 wrap_content 自己跟
+pageA.animate().translationY(-pageA.height.toFloat()).alpha(0f).withEndAction {
+    pageA.isVisible = false
+    pageB.isVisible = true          // 高度由 wrap_content 自动切换
+    pageB.animate().translationY(0f).alpha(1f).start()
+}.start()
+```
