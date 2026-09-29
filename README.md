@@ -14,6 +14,8 @@
 - 不收：第三方分发的 skill（如 `lark-*`、`mx-*`、`pdf`、`playwright`、`openclaw`），它们随上游升级覆盖，纳入自管只会分叉
 - 不收：与编码无关的个人领域 skill（投资、阅读、生活流程）
 
+![收录判据](assets/readme-illustrations/01-what-to-collect.png)
+
 ## 当前 skill
 
 知识域 wiki：
@@ -40,13 +42,14 @@
 
 ## 非 skill 目录
 
-这两个目录没有 `SKILL.md`，不参与 agent 发现，别按 skill 的规矩去改：
+这几个目录没有 `SKILL.md`，不参与 agent 发现，别按 skill 的规矩去改：
 
 | 目录 | 放什么 | 谁读 |
 |---|---|---|
 | `cursor_rules/` | 常驻规则实体（`*.mdc`），`~/.cursor/rules/` 下是指向这里的软链 | agent，每次会话常驻 |
 | `project_rules/` | 项目仓库里被 `.gitignore` 忽略的个人 `CLAUDE.md` 实体，按项目分目录 | agent，在该项目内常驻 |
 | `retros/` | AI 协作失败案例集，见该目录 `README.md` | 人 |
+| `assets/` | 本 README 的配图 | 人 |
 
 `cursor_rules/` 的软链方式与 skills 一致，但目标目录是 `~/.cursor/rules/`：
 
@@ -56,6 +59,8 @@ for f in *.mdc; do rm -f ~/.cursor/rules/$f && ln -s "$PWD/$f" ~/.cursor/rules/$
 ```
 
 规则文件曾经在两处各存一份并分叉过一次（改了外部那份，仓库这份没跟上）。**只留软链，不要拷副本。**
+
+![只留软链](assets/readme-illustrations/02-one-source-symlinks.png)
 
 `project_rules/` 同理，软链到对应项目根目录（项目的 `.gitignore` 已忽略 `/CLAUDE.md`，不影响团队仓库）：
 
@@ -101,6 +106,8 @@ head -3 ~/.agents/skills/<skill-name>/SKILL.md
     └── <工具>.py
 ```
 
+![按需读](assets/readme-illustrations/03-route-then-read-one.png)
+
 `scripts/` 的收录判据比 reference 严：**这件事人（和 agent）目测会稳定看错，而它是机械可算的。** 目前只有 `android_view_wiki/scripts/layout-chain.py`——约束拓扑跨文件、锚点反向依赖要全文搜，目测漏一个就是一次返工。脚本只读不写、零第三方依赖、`--help` 说清接口。
 
 硬约束：
@@ -145,6 +152,8 @@ head -3 ~/.agents/skills/<skill-name>/SKILL.md
 - **实战中 agent 判断错了 → 把这个失败模式记进对应 wiki**，这比预先扩充新知识域有用得多
 
 最后一条是这个仓库长期价值的来源：新域按需再建，已建的域靠真实失败反哺。
+
+![失败反哺](assets/readme-illustrations/04-failure-feedback.png)
 
 ## 说明
 
