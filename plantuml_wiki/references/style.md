@@ -76,7 +76,9 @@ legend right
 endlegend
 ```
 
-`legend` 的位置可选 `left` / `right` / `center` / `top` / `bottom`，渲染进 PNG 里跟图一起出，图例必须写在图上而不是聊天里——图存下来之后聊天记录就找不到了。
+`legend` 的位置可选 `left` / `right` / `center` / `top` / `bottom`，也能组合成 `top right` / `bottom left`，渲染进 PNG 里跟图一起出。图例必须写在图上而不是聊天里——图存下来之后聊天记录就找不到了。
+
+**位置要挑图内容稀疏的那个角**。图例是独立摆放的，不挤开类框：放到密集侧只是彼此靠近，放到空侧则会把画布整体撑大、留一整块空白（实测 `bottom left` 在一张右下密集的图上拉出了约四分之一张空白）。不确定就 `top right`，多数类图右上角是空的。
 
 ## skinparam 常用
 

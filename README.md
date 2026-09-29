@@ -45,6 +45,7 @@
 | 目录 | 放什么 | 谁读 |
 |---|---|---|
 | `cursor_rules/` | 常驻规则实体（`*.mdc`），`~/.cursor/rules/` 下是指向这里的软链 | agent，每次会话常驻 |
+| `project_rules/` | 项目仓库里被 `.gitignore` 忽略的个人 `CLAUDE.md` 实体，按项目分目录 | agent，在该项目内常驻 |
 | `retros/` | AI 协作失败案例集，见该目录 `README.md` | 人 |
 
 `cursor_rules/` 的软链方式与 skills 一致，但目标目录是 `~/.cursor/rules/`：
@@ -55,6 +56,12 @@ for f in *.mdc; do rm -f ~/.cursor/rules/$f && ln -s "$PWD/$f" ~/.cursor/rules/$
 ```
 
 规则文件曾经在两处各存一份并分叉过一次（改了外部那份，仓库这份没跟上）。**只留软链，不要拷副本。**
+
+`project_rules/` 同理，软链到对应项目根目录（项目的 `.gitignore` 已忽略 `/CLAUDE.md`，不影响团队仓库）：
+
+```bash
+ln -s ~/work_space/skills/project_rules/yidui_android/CLAUDE.md ~/work_space/yidui.android_opt/CLAUDE.md
+```
 
 `retros/` 的作用是给「同一类问题第二次出现」提供证据——`post-change-gpt-review.mdc` 卡了"第二次才写规则"的触发线，而凭记忆判断是不是第二次必然失败。改规则前先去那里翻同类案例。
 

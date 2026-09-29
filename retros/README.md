@@ -13,6 +13,7 @@
 | 日期 | 案例 | 错误模式 | 谁发现的 | 落点 | 状态 |
 |---|---|---|---|---|---|
 | 2026-09-10 | [tips View 的槽位归属](2026-09-10-tips-view-ownership.md) | 归属由复用决定，不由约束决定 | 用户（代码已上线三轮改动之后） | `cursor_rules/post-change-gpt-review.mdc`、`android_view_wiki/references/constraintlayout.md` | 观察中 |
+| 2026-09-22 | [不受约束的中间产物必然被偏离](2026-09-22-unconstrained-artifacts.md) | 审批载体不受机器约束 → 方案层结论在实现阶段被静默偏离 | 用户（实现完成、返工数轮之后） | `CLAUDE.md` gate 5/6、`plan_skill`；新增「状态转移矩阵」产出物 | 观察中 |
 
 「谁发现的」这一列是流程体检表：长期都是「用户」，说明动手前那一步没起作用，该改流程；如果开始出现「自检」「design-review」，说明卡口生效了。
 
